@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Document</title>
+	</head>
+	<body>
+		<style>
+			* {
+				opacity: 0;
+			}
+		</style>
+		<script>
+			// Create WebSocket connection.
+			let socket;
+
+			const establishConnection = () => {
+				socket = new WebSocket(location.href.replace("http", "ws"));
+
+				const playingSounds = [];
+
+				// Connection opened
+				socket.addEventListener("open", function (event) {
+					socket.addEventListener("message", async function (event) {
+						if (String(event.data).startsWith("playSound:") && String(event.data).split(":").length === 2) {
+							if (playingSounds.find((s) => s.name === String(event.data).split(":")[1])) return;
+							const sound = new Audio(String(event.data).split(":")[1]);
+							sound.play();
+
+							playingSounds.push({
+								name: String(event.data).split(":")[1],
+								stop: () => {
+									sound.remove();
+									playingSounds.splice(
+										playingSounds.findIndex((s) => s.name === String(event.data).split(":")[1]),
+										1
+									);
+								},
+							});
+
+							(async () => {
+								while (!sound.paused) await new Promise((resolve) => setTimeout(resolve, 50));
+
+								playingSounds.splice(
+									playingSounds.findIndex((s) => s.name === String(event.data).split(":")[1]),
+									1
+								);
+							})();
+						} else if (String(event.data).startsWith("stopSound:") && String(event.data).split(":").length === 2) {
+							const sound = playingSounds.find((s) => s.name === String(event.data).split(":")[1]);
+
+							if (sound) sound.stop();
+						} else if (String(event.data).startsWith("toggleSound:") && String(event.data).split(":").length === 2) {
+							const sound = playingSounds.find((s) => s.name === String(event.data).split(":")[1]);
+
+							if (sound) sound.stop();
+							else {
+								const sound = new Audio(String(event.data).split(":")[1]);
+								sound.play();
+
+								playingSounds.push({name: String(event.data).split(":")[1], stop: () => sound.pause()});
+
+								(async () => {
+									while (!sound.paused) await new Promise((resolve) => setTimeout(resolve, 50));
+
+									playingSounds.splice(
+										playingSounds.findIndex((s) => s.name === String(event.data).split(":")[1]),
+										1
+									);
+								})();
+							}
+						}
+					});
+				});
+
+				socket.addEventListener("close", () => {
+					setTimeout(establishConnection, 100);
+				});
+			};
+
+			establishConnection();
+		</script>
+	</body>
+</html>

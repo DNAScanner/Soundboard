@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Document</title>
+	</head>
+	<body>
+		<style>
+			html {
+				background-color: #000;
+			}
+
+			body {
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				color: #fff;
+				/* There is supposed to be at most 5 sounds per row */
+				flex-wrap: wrap;
+				gap: 1rem;
+				padding: 1rem;
+			}
+
+			img {
+				--size: 18vw;
+				border-radius: 1rem;
+				cursor: pointer;
+				width: var(--size);
+				height: var(--size);
+			}
+		</style>
+		<script>
+			let socket;
+
+			document.body.addEventListener("click", () => document.body.requestFullscreen());
+
+			const toggleSound = (sound) => {
+				socket.send(`toggleSound:${sound}`);
+			};
+
+			const sounds = ["SOUNDS"];
+
+			for (const sound of sounds) {
+				// <img href="sound.png" onclick="toggleSound('sound.mp3')" />
+				const img = document.createElement("img");
+				img.src = `${sound}.png`;
+				img.draggable = false;
+				img.onclick = () => toggleSound(`${sound}.mp3`);
+				document.body.appendChild(img);
+			}
+
+			const establishConnection = () => {
+				socket = new WebSocket(location.href.replace("http", "ws"));
+
+				socket.addEventListener("open", function (event) {
+					socket.send("setRole:send");
+				});
+
+				socket.addEventListener("close", () => {
+					setTimeout(establishConnection, 100);
+				});
+			};
+
+			establishConnection();
+		</script>
+	</body>
+</html>
