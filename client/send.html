@@ -33,7 +33,7 @@
 		<script>
 			let socket;
 
-			document.body.addEventListener("click", () => document.body.requestFullscreen());
+			if (!localStorage.getItem("pfs")) document.body.addEventListener("click", () => document.body.requestFullscreen());
 
 			const toggleSound = (sound) => {
 				socket.send(`toggleSound:${sound}`);
